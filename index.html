@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="廣宣設計稿生成器v1.0">
+  <meta name="theme-color" content="#6366F1">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/line-seed-jp@0.0.5/line-seed-jp.css">
+  <link rel="stylesheet" href="styles.css">
+  <title>廣宣設計稿生成器v1.0</title>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-group">
+      <div class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </div>
+      <h1 class="app-title">廣宣設計稿生成器v1.0</h1>
+    </div>
+  </div>
+</header>
+
+<main class="content">
+
+  <!-- Section 1: Source File -->
+  <section class="section" id="sec1">
+    <div class="section-header">
+      <span class="step-num">1</span>
+      <h2>取得主視覺圖（來源檔案）</h2>
+    </div>
+    <div class="sec1-body">
+      <div class="upload-area" id="dropZone">
+        <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8B8FA3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+        <p class="upload-text">拖曳圖片到此處上傳</p>
+        <div class="upload-actions">
+          <label class="btn btn-primary" for="fileInput">選擇檔案</label>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+          <span class="or-text">或</span>
+          <input type="url" class="input-field url-input" placeholder="輸入圖片 URL..." id="urlInput">
+        </div>
+        <p class="format-hint">支援格式：.png .jpg .gif .webp</p>
+      </div>
+      <div class="file-info-card" id="fileInfo" style="display:none">
+        <div class="thumb-box" id="thumbBox">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#A0A4B8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        </div>
+        <div class="file-details">
+          <p class="file-name" id="fileName">—</p>
+          <div class="detail-row"><span class="detail-label">類型</span><span class="detail-value accent" id="fileType">—</span></div>
+          <div class="detail-row"><span class="detail-label">尺寸</span><span class="detail-value" id="fileDims">—</span></div>
+          <div class="detail-row"><span class="detail-label">解析度</span><span class="detail-value" id="fileDpi">72 dpi</span></div>
+          <div class="detail-row"><span class="detail-label">容量</span><span class="detail-value" id="fileSize">—</span></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-gradient disabled" id="analyzeBtn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      開始 AI 拆解分析
+    </button>
+  </section>
+
+  <!-- Section 2: Element Analysis -->
+  <section class="section" id="sec2">
+    <div class="section-header">
+      <span class="step-num">2</span>
+      <h2>元素拆解分析</h2>
+      <div class="ocr-status" id="ocrStatus"></div>
+    </div>
+    <div class="sec2-body">
+      <div class="card" id="layerCard">
+        <h3 class="card-title accent">圖像元素</h3>
+        <div class="element-item sortable-layer" data-layer="thumbMain">
+          <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+          <span class="layer-num">1</span>
+          <div class="elem-thumb" id="thumbMain"></div><span>主視覺圖</span><span class="tag">核心</span><button class="clear-img-btn" data-thumb="thumbMain" title="設為空白"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><label class="add-img-btn" title="自訂圖片"><input type="file" accept="image/*" hidden data-thumb="thumbMain"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></label>
+        </div>
+        <div class="element-item sortable-layer" data-layer="thumbTitle">
+          <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+          <span class="layer-num">2</span>
+          <div class="elem-thumb" id="thumbTitle"></div><span>圖像標題</span><button class="clear-img-btn" data-thumb="thumbTitle" title="設為空白"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><label class="add-img-btn" title="自訂圖片"><input type="file" accept="image/*" hidden data-thumb="thumbTitle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></label>
+        </div>
+        <div class="element-item sortable-layer" data-layer="thumbAux">
+          <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+          <span class="layer-num">3</span>
+          <div class="elem-thumb" id="thumbAux"></div><span>輔助圖像</span><button class="clear-img-btn" data-thumb="thumbAux" title="設為空白"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><label class="add-img-btn" title="自訂圖片"><input type="file" accept="image/*" hidden data-thumb="thumbAux"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></label>
+        </div>
+        <div class="element-item sortable-layer" data-layer="thumbLogo">
+          <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+          <span class="layer-num">4</span>
+          <div class="elem-thumb" id="thumbLogo"></div><span>Logo / 標誌</span><label class="invert-toggle" title="反白呈現"><input type="checkbox" id="logoInvert"><span class="invert-label">反白</span></label><button class="clear-img-btn" data-thumb="thumbLogo" title="設為空白"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><label class="add-img-btn" title="自訂圖片"><input type="file" accept="image/*" hidden data-thumb="thumbLogo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></label>
+        </div>
+        <div class="element-item" data-layer="thumbBg">
+          <span class="layer-badge">底層</span>
+          <div class="elem-thumb" id="thumbBg"></div><span>背景圖</span><label class="color-pick-btn" title="自訂背景色"><input type="color" id="bgColorPicker" value="#1a1a2e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2 10 10 0 0 0-7-13Z"/><circle cx="8" cy="10" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg></label><button class="clear-img-btn" data-thumb="thumbBg" title="設為空白"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><label class="add-img-btn" title="自訂圖片"><input type="file" accept="image/*" hidden data-thumb="thumbBg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></label>
+        </div>
+      </div>
+      <div class="card" id="textCard">
+        <h3 class="card-title accent">文字元素</h3>
+        <div class="text-field-group sortable-layer" data-layer="textTitle">
+          <div class="field-header">
+            <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+            <span class="layer-num">5</span>
+            <label class="field-label">標題</label>
+            <span class="field-size-tag">最大文字</span>
+          </div>
+          <input type="text" class="input-field" placeholder="AI 分析後自動填入，或直接輸入..." id="txtTitle">
+          <div class="text-style-row">
+            <select class="weight-select" id="weightTitle"><option value="800" selected>ExtraBold</option><option value="700">Bold</option><option value="400">Regular</option><option value="100">Thin</option></select>
+            <label class="text-color-pick"><input type="color" id="colorTitle" value="#FFFFFF"><span class="color-swatch" style="background:#FFFFFF"></span></label>
+            <label class="shadow-toggle"><input type="checkbox" id="shadowTitle"><span class="shadow-label">陰影</span></label>
+          </div>
+        </div>
+        <div class="text-field-group sortable-layer" data-layer="textSubtitle">
+          <div class="field-header">
+            <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+            <span class="layer-num">6</span>
+            <label class="field-label">次標題</label>
+            <span class="field-size-tag">大文字</span>
+          </div>
+          <input type="text" class="input-field" placeholder="AI 分析後自動填入，或直接輸入..." id="txtSubtitle">
+          <div class="text-style-row">
+            <select class="weight-select" id="weightSubtitle"><option value="800">ExtraBold</option><option value="700" selected>Bold</option><option value="400">Regular</option><option value="100">Thin</option></select>
+            <label class="text-color-pick"><input type="color" id="colorSubtitle" value="#FFFFFF"><span class="color-swatch" style="background:#FFFFFF"></span></label>
+            <label class="shadow-toggle"><input type="checkbox" id="shadowSubtitle"><span class="shadow-label">陰影</span></label>
+          </div>
+        </div>
+        <div class="text-field-group sortable-layer" data-layer="textDesc">
+          <div class="field-header">
+            <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+            <span class="layer-num">7</span>
+            <label class="field-label">說明文字</label>
+            <span class="field-size-tag">中文字</span>
+          </div>
+          <input type="text" class="input-field" placeholder="AI 分析後自動填入，或直接輸入..." id="txtDesc">
+          <div class="text-style-row">
+            <select class="weight-select" id="weightDesc"><option value="800">ExtraBold</option><option value="700">Bold</option><option value="400" selected>Regular</option><option value="100">Thin</option></select>
+            <label class="text-color-pick"><input type="color" id="colorDesc" value="#FFFFFF"><span class="color-swatch" style="background:#FFFFFF"></span></label>
+            <label class="shadow-toggle"><input type="checkbox" id="shadowDesc"><span class="shadow-label">陰影</span></label>
+          </div>
+        </div>
+        <div class="text-field-group sortable-layer" data-layer="textNote">
+          <div class="field-header">
+            <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+            <span class="layer-num">8</span>
+            <label class="field-label">註釋文字</label>
+            <span class="field-size-tag">小文字</span>
+          </div>
+          <input type="text" class="input-field" placeholder="AI 分析後自動填入，或直接輸入..." id="txtNote">
+          <div class="text-style-row">
+            <select class="weight-select" id="weightNote"><option value="800">ExtraBold</option><option value="700">Bold</option><option value="400" selected>Regular</option><option value="100">Thin</option></select>
+            <label class="text-color-pick"><input type="color" id="colorNote" value="#FFFFFF"><span class="color-swatch" style="background:#FFFFFF"></span></label>
+            <label class="shadow-toggle"><input type="checkbox" id="shadowNote"><span class="shadow-label">陰影</span></label>
+          </div>
+        </div>
+        <div class="text-field-group sortable-layer" data-layer="textDate">
+          <div class="field-header">
+            <div class="layer-arrows"><button class="layer-btn layer-up" title="上移">▲</button><button class="layer-btn layer-down" title="下移">▼</button></div>
+            <span class="layer-num">9</span>
+            <label class="field-label">活動日期</label>
+            <span class="field-size-tag">日期區間</span>
+          </div>
+          <div class="date-range-row">
+            <input type="date" class="date-input" id="dateStart">
+            <span class="date-separator">—</span>
+            <input type="date" class="date-input" id="dateEnd">
+          </div>
+          <input type="text" class="input-field" placeholder="選擇日期後自動填入，或直接輸入..." id="txtDate">
+          <div class="text-style-row">
+            <select class="weight-select" id="weightDate"><option value="800">ExtraBold</option><option value="700" selected>Bold</option><option value="400">Regular</option><option value="100">Thin</option></select>
+            <label class="text-color-pick"><input type="color" id="colorDate" value="#FFFFFF"><span class="color-swatch" style="background:#FFFFFF"></span></label>
+            <label class="shadow-toggle"><input type="checkbox" id="shadowDate"><span class="shadow-label">陰影</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-gradient" id="recomposeBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m6.36.64-2.12 2.12M21 12h-3m-.64 6.36-2.12-2.12M12 21v-3m-4.24-.64 2.12-2.12M3 12h3m.64-6.36 2.12 2.12"/></svg>
+      開始生成提示詞
+    </button>
+  </section>
+
+  <!-- Section 3: AI Image Generation Preview -->
+  <section class="section" id="sec3">
+    <div class="section-header">
+      <span class="step-num">3</span>
+      <h2>AI 背景生成 + 元素疊合</h2>
+    </div>
+    <p class="hybrid-hint">AI 分析所有圖像元素後生成新背景，再自動疊加文字元素，確保內容精確呈現。</p>
+    <div class="card">
+      <div class="api-key-area">
+        <label class="field-label">Together AI API Key <span class="key-hint">（<a href="https://api.together.xyz/settings/api-keys" target="_blank">API 取得</a>，僅存於本機）</span></label>
+        <div class="api-key-row">
+          <input type="password" class="input-field" id="togetherApiKey" placeholder="輸入 Together AI API Key...">
+          <button class="btn btn-sm" id="toggleKeyBtn" type="button">顯示</button>
+        </div>
+      </div>
+      <div class="prompt-area">
+        <label class="field-label">生成提示詞</label>
+        <textarea class="input-field" id="aiPrompt" rows="6" placeholder="點擊「開始生成提示詞」自動組成，也可手動編輯..."></textarea>
+      </div>
+    </div>
+    <select class="model-select" id="modelSelect">
+      <option value="none">📐 不使用 AI 背景（直接組合圖像元素）</option>
+      <option value="black-forest-labs/FLUX.1-dev" selected>🔬 Flux Dev</option>
+      <option value="black-forest-labs/FLUX.1.1-pro">💎 Flux 1.1 Pro</option>
+      <option value="HiDream-ai/HiDream-I1-Fast">⚡ HiDream Fast</option>
+      <option value="HiDream-ai/HiDream-I1-Dev">🚀 HiDream Dev</option>
+      <option value="Rundiffusion/Juggernaut-Lightning-Flux">⚡ Juggernaut Lightning</option>
+      <option value="RunDiffusion/Juggernaut-pro-flux">🎨 Juggernaut Pro</option>
+      <option value="Lykon/DreamShaper">🌈 DreamShaper</option>
+    </select>
+    <button class="btn btn-gradient" id="aiGenerateBtn">
+      生成廣宣圖
+    </button>
+    <div class="ai-preview-area" id="aiPreviewArea">
+      <div class="ai-preview-box" id="aiPreviewBox">
+        <span class="ai-placeholder">點擊上方按鈕開始 AI 生成</span>
+      </div>
+      <div class="prompt-row" id="refineRow" style="display:none">
+        <input type="text" class="input-field prompt-input" id="refinePrompt" placeholder="修改後按此更新；輸入「重新生成背景」可重新呼叫 AI">
+        <button class="btn btn-primary btn-sm" id="refineBtn">修改</button>
+      </div>
+      <div class="sec3-actions" id="sec3Actions" style="display:none">
+        <button class="btn btn-primary" id="saveImageBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          儲存檔案
+        </button>
+        <button class="btn btn-gradient" id="goResizeBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          生成其他尺寸
+        </button>
+        <button class="btn btn-sm" id="unlockBtn" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="12 17 7 12 12 7"/><line x1="19" y1="12" x2="7" y2="12"/></svg>
+          返回內容編輯
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Size Config -->
+  <section class="section" id="sec4">
+    <div class="section-header">
+      <span class="step-num">4</span>
+      <h2>設定所需尺寸</h2>
+    </div>
+    <div class="sec4-body">
+      <div class="card">
+        <h3 class="card-title">手動輸入尺寸</h3>
+        <div class="manual-row">
+          <input type="number" class="input-field size-input" placeholder="寬 (px)" id="widthInput">
+          <span class="x-label">×</span>
+          <input type="number" class="input-field size-input" placeholder="高 (px)" id="heightInput">
+          <button class="btn btn-primary btn-sm" id="addSizeBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            新增
+          </button>
+        </div>
+        <div class="added-list" id="addedList"></div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">常用尺寸</h3>
+        <div class="preset-list" id="presetList">
+          <label class="checkbox-row"><input type="checkbox" data-w="1200" data-h="630"><span class="custom-cb"></span>Facebook 貼文 1200 × 630</label>
+          <label class="checkbox-row"><input type="checkbox" data-w="1080" data-h="1080"><span class="custom-cb"></span>Instagram 貼文 1080 × 1080</label>
+          <label class="checkbox-row"><input type="checkbox" data-w="1080" data-h="1920"><span class="custom-cb"></span>Instagram 限動 1080 × 1920</label>
+          <label class="checkbox-row"><input type="checkbox" data-w="1280" data-h="720"><span class="custom-cb"></span>YouTube 縮圖 1280 × 720</label>
+          <label class="checkbox-row"><input type="checkbox" data-w="1040" data-h="1040"><span class="custom-cb"></span>LINE 橫幅 1040 × 1040</label>
+          <label class="checkbox-row"><input type="checkbox" data-w="300" data-h="250"><span class="custom-cb"></span>Google 廣告 300 × 250</label>
+          <label class="checkbox-row"><input type="checkbox" data-w="600" data-h="400"><span class="custom-cb"></span>電子報 600 × 400</label>
+        </div>
+      </div>
+    </div>
+    <div class="action-buttons">
+      <button class="btn btn-primary" id="confirmBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        設定完成
+      </button>
+      <button class="btn btn-gradient" id="executeBtn" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        開始執行
+      </button>
+    </div>
+  </section>
+
+  <!-- Section 5: Results -->
+  <section class="section" id="sec5" style="display:none">
+    <div class="section-header">
+      <span class="step-num">5</span>
+      <h2>即時預覽生成結果</h2>
+      <div class="sec5-actions">
+        <label class="checkbox-row compact"><input type="checkbox" id="selectAll" checked><span class="custom-cb"></span>全選</label>
+        <button class="btn btn-gradient btn-sm" id="exportBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          匯出為 ZIP
+        </button>
+      </div>
+    </div>
+    <div class="results-grid" id="resultsGrid"></div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
