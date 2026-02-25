@@ -496,10 +496,12 @@ body {
 }
 .result-item {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  opacity: 0; transform: translateY(12px);
+}
+.result-item.fade-in {
   animation: fadeInUp .3s ease forwards;
 }
 @keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .result-cb-row { display: flex; width: 100%; justify-content: flex-end; }

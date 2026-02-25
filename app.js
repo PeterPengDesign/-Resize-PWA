@@ -1612,7 +1612,6 @@ async function generateResults() {
 
       const item = document.createElement('div');
       item.className = 'result-item';
-      item.style.animationDelay = `${i * 80}ms`;
       item.innerHTML = `
         <div class="result-cb-row"><div class="result-cb checked" data-file="${fileName}"></div></div>
         <div class="result-thumb"></div>
@@ -1636,6 +1635,10 @@ async function generateResults() {
       cb.addEventListener('click', () => cb.classList.toggle('checked'));
 
       grid.appendChild(item);
+
+      // Trigger fade-in animation after DOM append
+      item.style.animationDelay = `${i * 80}ms`;
+      requestAnimationFrame(() => item.classList.add('fade-in'));
 
       // Update progress
       const pct = Math.round(((i + 1) / sizes.length) * 100);
