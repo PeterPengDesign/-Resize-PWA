@@ -1342,6 +1342,8 @@ function drawLayer(ctx, layerId, p) {
         let lw, lh;
         if (lRatio >= 1) { lw = logoMax; lh = Math.round(logoMax / lRatio); }
         else { lh = logoMax; lw = Math.round(logoMax * lRatio); }
+        // Force logo height to exactly 100px
+        if (lh !== 100) { lw = Math.round(100 * lRatio); lh = 100; }
         const lx = (tw - lw) / 2 + tw * offsets.logo.dx / 100;
         const ly = (th * 0.28 - lh) / 2 - th * 0.04 + th * offsets.logo.dy / 100;
 
@@ -1539,14 +1541,46 @@ addSizeBtn.addEventListener('click', () => {
 });
 
 function renderAddedList() {
-  addedList.innerHTML = customSizes.map((s, i) => `
+  addedList.innerHTML = customSizes.map((s, i) => {
+    const escapedName = (s.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    return `
     <div class="added-item">
-      <span>${s.w} × ${s.h}</span>
-      <button class="remove-btn" data-idx="${i}">
+      <span class="added-dims">${s.w} × ${s.h}</span>
+      <input class="input-field added-name-input" placeholder="自訂名稱" value="${escapedName}" data-idx="${i}">
+      <button class="save-to-preset-btn" data-idx="${i}" title="儲存到常用">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button class="remove-btn" data-idx="${i}" title="移除">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+
+  // Sync name edits back to customSizes
+  addedList.querySelectorAll('.added-name-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const idx = parseInt(input.dataset.idx);
+      customSizes[idx].name = input.value;
+    });
+  });
+
+  // Save to preset list
+  addedList.querySelectorAll('.save-to-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const s = customSizes[idx];
+      const name = (s.name || '').trim() || `自訂 ${s.w}×${s.h}`;
+      allPresets.push({ w: s.w, h: s.h, name });
+      persistPresets();
+      renderPresetList();
+      // Visual feedback
+      btn.style.color = 'var(--primary)';
+      btn.title = '已儲存';
+      setTimeout(() => { btn.style.color = ''; btn.title = '儲存到常用'; }, 1200);
+    });
+  });
+
+  // Remove from list
   addedList.querySelectorAll('.remove-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       customSizes.splice(parseInt(btn.dataset.idx), 1);
@@ -1554,6 +1588,83 @@ function renderAddedList() {
     });
   });
 }
+
+// ===== Preset List (localStorage, unified) =====
+const PRESETS_KEY = 'preset_list';
+const DEFAULT_PRESETS = [
+  { w: 1200, h: 630,  name: 'Facebook 貼文' },
+  { w: 1080, h: 1080, name: 'Instagram 貼文' },
+  { w: 1080, h: 1920, name: 'Instagram 限動' },
+  { w: 1280, h: 720,  name: 'YouTube 縮圖' },
+  { w: 1040, h: 1040, name: 'LINE 橫幅' },
+  { w: 300,  h: 250,  name: 'Google 廣告' },
+  { w: 600,  h: 400,  name: '電子報' }
+];
+
+let allPresets;
+const storedPresets = localStorage.getItem(PRESETS_KEY);
+if (storedPresets) {
+  allPresets = JSON.parse(storedPresets);
+} else {
+  // First load or migration from old key
+  const oldSaved = JSON.parse(localStorage.getItem('saved_presets') || '[]');
+  allPresets = [...DEFAULT_PRESETS, ...oldSaved];
+  localStorage.removeItem('saved_presets');
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(allPresets));
+}
+
+function persistPresets() {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(allPresets));
+}
+
+function renderPresetList() {
+  const container = document.getElementById('presetList');
+  if (!container) return;
+  container.innerHTML = allPresets.map((p, i) => {
+    const escapedName = p.name.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return `
+    <label class="checkbox-row saved-preset-row">
+      <input type="checkbox" data-w="${p.w}" data-h="${p.h}">
+      <span class="custom-cb"></span>
+      <span class="saved-preset-name">${escapedName}</span>
+      <span class="preset-dims">${p.w} × ${p.h}</span>
+      <button class="delete-preset-btn" data-idx="${i}" title="刪除">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </label>`;
+  }).join('');
+
+  container.querySelectorAll('.delete-preset-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      allPresets.splice(parseInt(btn.dataset.idx), 1);
+      persistPresets();
+      renderPresetList();
+    });
+  });
+
+  // Show restore button if any defaults are missing
+  const restoreBtn = document.getElementById('restoreDefaultsBtn');
+  if (restoreBtn) {
+    const hasMissing = DEFAULT_PRESETS.some(d =>
+      !allPresets.some(p => p.w === d.w && p.h === d.h)
+    );
+    restoreBtn.style.display = hasMissing ? '' : 'none';
+  }
+}
+
+document.getElementById('restoreDefaultsBtn').addEventListener('click', () => {
+  DEFAULT_PRESETS.forEach(d => {
+    if (!allPresets.some(p => p.w === d.w && p.h === d.h)) {
+      allPresets.unshift(d);
+    }
+  });
+  persistPresets();
+  renderPresetList();
+});
+
+renderPresetList();
 
 // ===== Section 4: Confirm & Execute =====
 const confirmBtn = document.getElementById('confirmBtn');

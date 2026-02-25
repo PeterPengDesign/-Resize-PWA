@@ -431,13 +431,26 @@ body {
 .x-label { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
 .added-list { display: flex; flex-direction: column; gap: 6px; }
 .added-item {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 6px;
   padding: 8px 10px; border-radius: 6px; background: var(--bg); font-size: 12px; font-weight: 500;
 }
+.added-dims { white-space: nowrap; flex-shrink: 0; }
+.added-name-input {
+  flex: 1; min-width: 0; height: 30px; padding: 0 8px;
+  font-size: 12px;
+}
+.save-to-preset-btn {
+  background: none; border: none; cursor: pointer; color: var(--text-secondary);
+  padding: 4px; line-height: 0; border-radius: 4px; flex-shrink: 0;
+  transition: all .15s;
+}
+.save-to-preset-btn:hover { color: var(--primary); background: var(--tag-bg); }
 .added-item .remove-btn {
   background: none; border: none; cursor: pointer; color: var(--text-secondary);
-  padding: 4px; line-height: 0;
+  padding: 4px; line-height: 0; border-radius: 4px; flex-shrink: 0;
+  transition: all .15s;
 }
+.added-item .remove-btn:hover { color: #DC2626; background: #FEE2E2; }
 
 /* Checkbox */
 .checkbox-row {
@@ -473,6 +486,22 @@ body {
 .sec4-source-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
 
 .preset-list { display: flex; flex-direction: column; gap: 6px; }
+.saved-preset-row {
+  display: flex; align-items: center; gap: 8px; position: relative;
+}
+.saved-preset-name {
+  flex: 1; min-width: 0; font-size: 13px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.preset-dims {
+  font-size: 11px; color: var(--text-secondary); white-space: nowrap; flex-shrink: 0;
+}
+.delete-preset-btn {
+  background: none; border: none; cursor: pointer; color: var(--text-secondary);
+  padding: 4px; line-height: 0; border-radius: 4px; flex-shrink: 0;
+  transition: all .15s;
+}
+.delete-preset-btn:hover { color: #DC2626; background: #FEE2E2; }
 .action-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
 /* Generate progress */
