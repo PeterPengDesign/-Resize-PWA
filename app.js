@@ -1508,9 +1508,9 @@ confirmBtn.addEventListener('click', () => {
   executeBtn.style.display = 'inline-flex';
 });
 
-executeBtn.addEventListener('click', () => {
+executeBtn.addEventListener('click', async () => {
   if (!uploadedImage) return alert('請先上傳圖片');
-  generateResults();
+  await generateResults();
 });
 
 function getSelectedSizes() {
@@ -1535,7 +1535,7 @@ async function generateResults() {
   // Progress UI
   const savedBtnHTML = executeBtn.innerHTML;
   executeBtn.disabled = true;
-  executeBtn.innerHTML = '<span class="spinner"></span> 生成中...';
+  executeBtn.textContent = '生成中...';
   const progressEl = document.getElementById('generateProgress');
   const progressFill = document.getElementById('generateProgressFill');
   const progressText = document.getElementById('generateProgressText');
@@ -1543,68 +1543,73 @@ async function generateResults() {
   progressFill.style.width = '0%';
   progressText.textContent = `0 / ${sizes.length}`;
 
-  const baseName = document.getElementById('fileName').textContent.replace(/\.[^.]+$/, '') || 'image';
-  const texts = gatherTexts();
+  try {
+    const baseName = document.getElementById('fileName').textContent.replace(/\.[^.]+$/, '') || 'image';
+    const texts = gatherTexts();
 
-  // Cache AI background once (avoid reloading per size)
-  let aiBgCanvas = null;
-  if (lastAIBgBase64) {
-    aiBgCanvas = await loadImageToCanvas(lastAIBgBase64);
-  }
-
-  const THUMB_MAX = 400;
-
-  for (let i = 0; i < sizes.length; i++) {
-    const s = sizes[i];
-    let canvas;
-    if (aiBgCanvas) {
-      canvas = compositeAIWithElements(aiBgCanvas, s.w, s.h);
-    } else {
-      canvas = composeImage(s.w, s.h, texts, fullResCrops, null);
+    // Cache AI background once (avoid reloading per size)
+    let aiBgCanvas = null;
+    if (lastAIBgBase64) {
+      aiBgCanvas = await loadImageToCanvas(lastAIBgBase64);
     }
 
-    const fileName = `${baseName}_${s.w}x${s.h}.png`;
+    const THUMB_MAX = 400;
 
-    const item = document.createElement('div');
-    item.className = 'result-item';
-    item.style.animationDelay = `${i * 80}ms`;
-    item.innerHTML = `
-      <div class="result-cb-row"><div class="result-cb checked" data-file="${fileName}"></div></div>
-      <div class="result-thumb"></div>
-      <span class="result-name">${fileName}</span>
-      <span class="result-size">${s.w} × ${s.h}</span>
-    `;
+    for (let i = 0; i < sizes.length; i++) {
+      const s = sizes[i];
+      let canvas;
+      if (aiBgCanvas) {
+        canvas = compositeAIWithElements(aiBgCanvas, s.w, s.h);
+      } else {
+        canvas = composeImage(s.w, s.h, texts, fullResCrops, null);
+      }
 
-    // Downscaled thumbnail for preview (save memory)
-    const thumbScale = Math.min(1, THUMB_MAX / Math.max(s.w, s.h));
-    const thumbCanvas = document.createElement('canvas');
-    thumbCanvas.width = Math.round(s.w * thumbScale);
-    thumbCanvas.height = Math.round(s.h * thumbScale);
-    thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-    item.querySelector('.result-thumb').appendChild(thumbCanvas);
+      const fileName = `${baseName}_${s.w}x${s.h}.png`;
 
-    // Store full-size canvas for export
-    item._canvas = canvas;
-    item._fileName = fileName;
+      const item = document.createElement('div');
+      item.className = 'result-item';
+      item.style.animationDelay = `${i * 80}ms`;
+      item.innerHTML = `
+        <div class="result-cb-row"><div class="result-cb checked" data-file="${fileName}"></div></div>
+        <div class="result-thumb"></div>
+        <span class="result-name">${fileName}</span>
+        <span class="result-size">${s.w} × ${s.h}</span>
+      `;
 
-    const cb = item.querySelector('.result-cb');
-    cb.addEventListener('click', () => cb.classList.toggle('checked'));
+      // Downscaled thumbnail for preview (save memory)
+      const thumbScale = Math.min(1, THUMB_MAX / Math.max(s.w, s.h));
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = Math.round(s.w * thumbScale);
+      thumbCanvas.height = Math.round(s.h * thumbScale);
+      thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+      item.querySelector('.result-thumb').appendChild(thumbCanvas);
 
-    grid.appendChild(item);
+      // Store full-size canvas for export
+      item._canvas = canvas;
+      item._fileName = fileName;
 
-    // Update progress
-    const pct = Math.round(((i + 1) / sizes.length) * 100);
-    progressFill.style.width = pct + '%';
-    progressText.textContent = `${i + 1} / ${sizes.length}`;
-    await new Promise(r => setTimeout(r, 0)); // yield to UI
+      const cb = item.querySelector('.result-cb');
+      cb.addEventListener('click', () => cb.classList.toggle('checked'));
+
+      grid.appendChild(item);
+
+      // Update progress
+      const pct = Math.round(((i + 1) / sizes.length) * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent = `${i + 1} / ${sizes.length}`;
+      await new Promise(r => setTimeout(r, 0)); // yield to UI
+    }
+
+    sec5.scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    console.error('[generateResults] error:', err);
+    alert('生成失敗：' + err.message);
+  } finally {
+    // Restore button & hide progress
+    executeBtn.disabled = false;
+    executeBtn.innerHTML = savedBtnHTML;
+    progressEl.style.display = 'none';
   }
-
-  // Restore button & hide progress
-  executeBtn.disabled = false;
-  executeBtn.innerHTML = savedBtnHTML;
-  progressEl.style.display = 'none';
-
-  sec5.scrollIntoView({ behavior: 'smooth' });
 }
 
 // ===== Section 5: Select All =====
