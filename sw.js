@@ -1,4 +1,4 @@
-const CACHE_NAME = 'resize-v84';
+const CACHE_NAME = 'resize-v85';
 const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', e => {

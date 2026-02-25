@@ -9,6 +9,7 @@ let layerOrder = ['thumbMain', 'thumbTitle', 'thumbAux', 'thumbLogo', 'textTitle
 // Store the last AI-generated image (as base64) for refine and Section 5
 let lastAIGeneratedBase64 = null;
 let lastAIBgBase64 = null; // raw AI background (before text overlay)
+let sec4SourceImage = null; // Section 4 custom uploaded source image
 
 // ===== Service Worker =====
 if ('serviceWorker' in navigator) {
@@ -1464,6 +1465,44 @@ function composeImage(tw, th, texts, crops, offsets) {
 
 // (Old parsePositionCommands, parsePromptEffects, effect functions, and drawTextOverlay removed — AI handles all modifications now)
 
+// ===== Section 4: Source Image Upload =====
+const sec4UploadBtn = document.getElementById('sec4UploadBtn');
+const sec4ResetBtn = document.getElementById('sec4ResetBtn');
+const sec4FileInput = document.getElementById('sec4FileInput');
+const sec4SourceThumb = document.getElementById('sec4SourceThumb');
+const sec4SourceName = document.getElementById('sec4SourceName');
+
+sec4UploadBtn.addEventListener('click', () => sec4FileInput.click());
+
+sec4FileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return alert('請上傳圖片檔案');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      sec4SourceImage = img;
+      sec4SourceThumb.innerHTML = '';
+      const preview = new Image();
+      preview.src = ev.target.result;
+      sec4SourceThumb.appendChild(preview);
+      sec4SourceName.textContent = file.name;
+      sec4ResetBtn.style.display = '';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  sec4FileInput.value = '';
+});
+
+sec4ResetBtn.addEventListener('click', () => {
+  sec4SourceImage = null;
+  sec4SourceThumb.innerHTML = '<span class="sec4-source-placeholder">使用區塊三生成結果</span>';
+  sec4SourceName.textContent = '預設：區塊三廣宣圖';
+  sec4ResetBtn.style.display = 'none';
+});
+
 // ===== Section 4: Size Management =====
 const addSizeBtn = document.getElementById('addSizeBtn');
 const widthInput = document.getElementById('widthInput');
@@ -1509,7 +1548,7 @@ confirmBtn.addEventListener('click', () => {
 });
 
 executeBtn.addEventListener('click', async () => {
-  if (!uploadedImage) return alert('請先上傳圖片');
+  if (!uploadedImage && !sec4SourceImage) return alert('請先上傳圖片');
   await generateResults();
 });
 
@@ -1549,7 +1588,7 @@ async function generateResults() {
 
     // Cache AI background once (avoid reloading per size)
     let aiBgCanvas = null;
-    if (lastAIBgBase64) {
+    if (!sec4SourceImage && lastAIBgBase64) {
       aiBgCanvas = await loadImageToCanvas(lastAIBgBase64);
     }
 
@@ -1558,7 +1597,12 @@ async function generateResults() {
     for (let i = 0; i < sizes.length; i++) {
       const s = sizes[i];
       let canvas;
-      if (aiBgCanvas) {
+      if (sec4SourceImage) {
+        // Custom source: crop/resize the uploaded image to target size
+        canvas = document.createElement('canvas');
+        canvas.width = s.w; canvas.height = s.h;
+        drawCover(canvas.getContext('2d'), sec4SourceImage, 0, 0, s.w, s.h);
+      } else if (aiBgCanvas) {
         canvas = compositeAIWithElements(aiBgCanvas, s.w, s.h);
       } else {
         canvas = composeImage(s.w, s.h, texts, fullResCrops, null);
