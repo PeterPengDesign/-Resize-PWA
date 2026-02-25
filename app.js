@@ -1618,7 +1618,7 @@ async function generateResults() {
       bgCanvas = await loadImageToCanvas(lastAIBgBase64);
     }
 
-    const THUMB_MAX = 400;
+    const THUMB_MAX = 800;
 
     for (let i = 0; i < sizes.length; i++) {
       const s = sizes[i];
