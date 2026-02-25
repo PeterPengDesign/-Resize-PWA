@@ -1532,17 +1532,34 @@ async function generateResults() {
   sec5.style.display = 'flex';
   grid.innerHTML = '';
 
+  // Progress UI
+  const savedBtnHTML = executeBtn.innerHTML;
+  executeBtn.disabled = true;
+  executeBtn.innerHTML = '<span class="spinner"></span> 生成中...';
+  const progressEl = document.getElementById('generateProgress');
+  const progressFill = document.getElementById('generateProgressFill');
+  const progressText = document.getElementById('generateProgressText');
+  progressEl.style.display = 'flex';
+  progressFill.style.width = '0%';
+  progressText.textContent = `0 / ${sizes.length}`;
+
   const baseName = document.getElementById('fileName').textContent.replace(/\.[^.]+$/, '') || 'image';
   const texts = gatherTexts();
 
-  for (const s of sizes) {
+  // Cache AI background once (avoid reloading per size)
+  let aiBgCanvas = null;
+  if (lastAIBgBase64) {
+    aiBgCanvas = await loadImageToCanvas(lastAIBgBase64);
+  }
+
+  const THUMB_MAX = 400;
+
+  for (let i = 0; i < sizes.length; i++) {
+    const s = sizes[i];
     let canvas;
-    if (lastAIBgBase64) {
-      // AI mode: use AI background + re-layout elements at target size
-      const aiBgCanvas = await loadImageToCanvas(lastAIBgBase64);
+    if (aiBgCanvas) {
       canvas = compositeAIWithElements(aiBgCanvas, s.w, s.h);
     } else {
-      // Non-AI mode: use composeImage (already supports arbitrary tw×th)
       canvas = composeImage(s.w, s.h, texts, fullResCrops, null);
     }
 
@@ -1550,6 +1567,7 @@ async function generateResults() {
 
     const item = document.createElement('div');
     item.className = 'result-item';
+    item.style.animationDelay = `${i * 80}ms`;
     item.innerHTML = `
       <div class="result-cb-row"><div class="result-cb checked" data-file="${fileName}"></div></div>
       <div class="result-thumb"></div>
@@ -1557,13 +1575,15 @@ async function generateResults() {
       <span class="result-size">${s.w} × ${s.h}</span>
     `;
 
+    // Downscaled thumbnail for preview (save memory)
+    const thumbScale = Math.min(1, THUMB_MAX / Math.max(s.w, s.h));
     const thumbCanvas = document.createElement('canvas');
-    thumbCanvas.width = s.w;
-    thumbCanvas.height = s.h;
-    thumbCanvas.getContext('2d').drawImage(canvas, 0, 0);
+    thumbCanvas.width = Math.round(s.w * thumbScale);
+    thumbCanvas.height = Math.round(s.h * thumbScale);
+    thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
     item.querySelector('.result-thumb').appendChild(thumbCanvas);
 
-    // Store canvas for export
+    // Store full-size canvas for export
     item._canvas = canvas;
     item._fileName = fileName;
 
@@ -1571,7 +1591,18 @@ async function generateResults() {
     cb.addEventListener('click', () => cb.classList.toggle('checked'));
 
     grid.appendChild(item);
+
+    // Update progress
+    const pct = Math.round(((i + 1) / sizes.length) * 100);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = `${i + 1} / ${sizes.length}`;
+    await new Promise(r => setTimeout(r, 0)); // yield to UI
   }
+
+  // Restore button & hide progress
+  executeBtn.disabled = false;
+  executeBtn.innerHTML = savedBtnHTML;
+  progressEl.style.display = 'none';
 
   sec5.scrollIntoView({ behavior: 'smooth' });
 }

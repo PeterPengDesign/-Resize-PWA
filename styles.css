@@ -463,6 +463,20 @@ body {
 .preset-list { display: flex; flex-direction: column; gap: 6px; }
 .action-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
+/* Generate progress */
+.generate-progress {
+  display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
+}
+.generate-progress .progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; flex: 1;
+}
+.generate-progress .progress-fill {
+  height: 100%; background: var(--primary); border-radius: 2px; transition: width .3s;
+}
+.generate-progress .progress-text {
+  font-size: 11px; color: var(--text-secondary); white-space: nowrap;
+}
+
 /* ===== Section 5 ===== */
 .sec5-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .results-grid {
@@ -470,6 +484,11 @@ body {
 }
 .result-item {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
+  opacity: 0; transform: translateY(12px);
+  animation: fadeInUp .3s ease forwards;
+}
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0); }
 }
 .result-cb-row { display: flex; width: 100%; justify-content: flex-end; }
 .result-cb {
