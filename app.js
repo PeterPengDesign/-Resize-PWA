@@ -787,6 +787,10 @@ document.getElementById('goResizeBtn').addEventListener('click', () => {
   const actions = document.getElementById('sec3Actions');
   if (actions) actions.style.pointerEvents = 'auto';
   document.getElementById('unlockBtn').style.display = 'inline-flex';
+
+  // Show Section 3 result as default source preview
+  updateSec4DefaultPreview();
+
   document.getElementById('sec4').scrollIntoView({ behavior: 'smooth' });
 });
 
@@ -1472,6 +1476,21 @@ const sec4FileInput = document.getElementById('sec4FileInput');
 const sec4SourceThumb = document.getElementById('sec4SourceThumb');
 const sec4SourceName = document.getElementById('sec4SourceName');
 
+// Show Section 3 generated result as default source preview
+function updateSec4DefaultPreview() {
+  if (sec4SourceImage) return; // custom image uploaded, don't override
+  if (lastAIGeneratedBase64) {
+    const preview = new Image();
+    preview.src = lastAIGeneratedBase64;
+    sec4SourceThumb.innerHTML = '';
+    sec4SourceThumb.appendChild(preview);
+    sec4SourceName.textContent = '區塊三廣宣圖';
+  } else {
+    sec4SourceThumb.innerHTML = '<span class="sec4-source-placeholder">尚未生成廣宣圖</span>';
+    sec4SourceName.textContent = '請先在區塊三生成廣宣圖';
+  }
+}
+
 sec4UploadBtn.addEventListener('click', () => sec4FileInput.click());
 
 sec4FileInput.addEventListener('change', e => {
@@ -1498,8 +1517,7 @@ sec4FileInput.addEventListener('change', e => {
 
 sec4ResetBtn.addEventListener('click', () => {
   sec4SourceImage = null;
-  sec4SourceThumb.innerHTML = '<span class="sec4-source-placeholder">使用區塊三生成結果</span>';
-  sec4SourceName.textContent = '預設：區塊三廣宣圖';
+  updateSec4DefaultPreview();
   sec4ResetBtn.style.display = 'none';
 });
 
@@ -1548,7 +1566,7 @@ confirmBtn.addEventListener('click', () => {
 });
 
 executeBtn.addEventListener('click', async () => {
-  if (!uploadedImage && !sec4SourceImage) return alert('請先上傳圖片');
+  if (!sec4SourceImage && !lastAIGeneratedBase64) return alert('請先在區塊三生成廣宣圖或上傳圖片');
   await generateResults();
 });
 
@@ -1584,29 +1602,31 @@ async function generateResults() {
 
   try {
     const baseName = document.getElementById('fileName').textContent.replace(/\.[^.]+$/, '') || 'image';
-    const texts = gatherTexts();
 
-    // Cache AI background once (avoid reloading per size)
-    let aiBgCanvas = null;
-    if (!sec4SourceImage && lastAIBgBase64) {
-      aiBgCanvas = await loadImageToCanvas(lastAIBgBase64);
+    // Determine source image: custom upload > Section 3 result
+    let sourceCanvas = null;
+    if (sec4SourceImage) {
+      // Use custom uploaded image
+      sourceCanvas = document.createElement('canvas');
+      sourceCanvas.width = sec4SourceImage.width;
+      sourceCanvas.height = sec4SourceImage.height;
+      sourceCanvas.getContext('2d').drawImage(sec4SourceImage, 0, 0);
+    } else if (lastAIGeneratedBase64) {
+      // Use Section 3 generated result
+      sourceCanvas = await loadImageToCanvas(lastAIGeneratedBase64);
+    }
+
+    if (!sourceCanvas) {
+      throw new Error('沒有可用的來源圖片，請先在區塊三生成廣宣圖或上傳圖片');
     }
 
     const THUMB_MAX = 400;
 
     for (let i = 0; i < sizes.length; i++) {
       const s = sizes[i];
-      let canvas;
-      if (sec4SourceImage) {
-        // Custom source: crop/resize the uploaded image to target size
-        canvas = document.createElement('canvas');
-        canvas.width = s.w; canvas.height = s.h;
-        drawCover(canvas.getContext('2d'), sec4SourceImage, 0, 0, s.w, s.h);
-      } else if (aiBgCanvas) {
-        canvas = compositeAIWithElements(aiBgCanvas, s.w, s.h);
-      } else {
-        canvas = composeImage(s.w, s.h, texts, fullResCrops, null);
-      }
+      const canvas = document.createElement('canvas');
+      canvas.width = s.w; canvas.height = s.h;
+      drawCover(canvas.getContext('2d'), sourceCanvas, 0, 0, s.w, s.h);
 
       const fileName = `${baseName}_${s.w}x${s.h}.png`;
 
