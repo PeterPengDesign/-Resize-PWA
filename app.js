@@ -1481,9 +1481,11 @@ function updateSec4DefaultPreview() {
   if (sec4SourceImage) return; // custom image uploaded, don't override
   if (lastAIGeneratedBase64) {
     const preview = new Image();
+    preview.onload = () => {
+      sec4SourceThumb.innerHTML = '';
+      sec4SourceThumb.appendChild(preview);
+    };
     preview.src = lastAIGeneratedBase64;
-    sec4SourceThumb.innerHTML = '';
-    sec4SourceThumb.appendChild(preview);
     sec4SourceName.textContent = '區塊三廣宣圖';
   } else {
     sec4SourceThumb.innerHTML = '<span class="sec4-source-placeholder">尚未生成廣宣圖</span>';
@@ -1503,12 +1505,11 @@ sec4FileInput.addEventListener('change', e => {
     img.onload = () => {
       sec4SourceImage = img;
       sec4SourceThumb.innerHTML = '';
-      const preview = new Image();
-      preview.src = ev.target.result;
-      sec4SourceThumb.appendChild(preview);
+      sec4SourceThumb.appendChild(img);
       sec4SourceName.textContent = file.name;
       sec4ResetBtn.style.display = '';
     };
+    img.onerror = () => alert('圖片載入失敗，請重新上傳');
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
