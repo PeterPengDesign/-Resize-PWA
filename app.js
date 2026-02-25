@@ -1566,7 +1566,9 @@ confirmBtn.addEventListener('click', () => {
 });
 
 executeBtn.addEventListener('click', async () => {
-  if (!sec4SourceImage && !lastAIGeneratedBase64) return alert('請先在區塊三生成廣宣圖或上傳圖片');
+  if (!sec4SourceImage && !lastAIBgBase64 && !Object.keys(fullResCrops).length) {
+    return alert('請先在區塊三生成廣宣圖或上傳圖片');
+  }
   await generateResults();
 });
 
@@ -1602,31 +1604,31 @@ async function generateResults() {
 
   try {
     const baseName = document.getElementById('fileName').textContent.replace(/\.[^.]+$/, '') || 'image';
+    const texts = gatherTexts();
 
-    // Determine source image: custom upload > Section 3 result
-    let sourceCanvas = null;
+    // Determine background source: custom upload > AI background > composeImage fallback
+    let bgCanvas = null;
     if (sec4SourceImage) {
-      // Use custom uploaded image
-      sourceCanvas = document.createElement('canvas');
-      sourceCanvas.width = sec4SourceImage.width;
-      sourceCanvas.height = sec4SourceImage.height;
-      sourceCanvas.getContext('2d').drawImage(sec4SourceImage, 0, 0);
-    } else if (lastAIGeneratedBase64) {
-      // Use Section 3 generated result
-      sourceCanvas = await loadImageToCanvas(lastAIGeneratedBase64);
-    }
-
-    if (!sourceCanvas) {
-      throw new Error('沒有可用的來源圖片，請先在區塊三生成廣宣圖或上傳圖片');
+      bgCanvas = document.createElement('canvas');
+      bgCanvas.width = sec4SourceImage.width;
+      bgCanvas.height = sec4SourceImage.height;
+      bgCanvas.getContext('2d').drawImage(sec4SourceImage, 0, 0);
+    } else if (lastAIBgBase64) {
+      bgCanvas = await loadImageToCanvas(lastAIBgBase64);
     }
 
     const THUMB_MAX = 400;
 
     for (let i = 0; i < sizes.length; i++) {
       const s = sizes[i];
-      const canvas = document.createElement('canvas');
-      canvas.width = s.w; canvas.height = s.h;
-      drawCover(canvas.getContext('2d'), sourceCanvas, 0, 0, s.w, s.h);
+      let canvas;
+      if (bgCanvas) {
+        // Use background + re-layout all elements at target size
+        canvas = compositeAIWithElements(bgCanvas, s.w, s.h);
+      } else {
+        // Non-AI mode: compose from original crops + elements
+        canvas = composeImage(s.w, s.h, texts, fullResCrops, null);
+      }
 
       const fileName = `${baseName}_${s.w}x${s.h}.png`;
 
